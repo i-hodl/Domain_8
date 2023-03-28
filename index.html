@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Domain 8</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Preview</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <img id="background" src="background/1.png" alt="background">
-    <img id="foreground" src="foreground/1.png" alt="foreground">
-    <button id="manual-update-btn">Manual Update</button>
-  <script src="app.js"></script>
+    <div class="container-wrapper">
+        <div class="container">
+            <img id="background" src="background/1.png" alt="Background">
+            <img id="foreground" src="foreground/1.png" alt="Foreground">
+            <video id="background-video" autoplay loop muted></video>
+        </div>
+        <button id="manual-update-btn">Update NFT</button>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>
