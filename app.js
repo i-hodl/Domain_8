@@ -6,59 +6,132 @@ const EXTRACTIONS_FOLDER = 'extractions';
 let backgroundIndex = 1;
 let foregroundIndex = 1;
 let baseIndex = 1;
+let extractionsIndex = 1;
 
-function combineNFT() {
-  const background = document.getElementById('background');
-  const foreground = document.getElementById('foreground');
-  const backgroundVideo = document.getElementById('background-video');
+const updatesPerDay = 8;
+const updateDuration = 24 * 60 * 60 * 1000 / updatesPerDay;
 
-  backgroundIndex = Math.floor(Math.random() * 9) + 1;
-  foregroundIndex = Math.floor(Math.random() * 6) + 1;
+const base = document.getElementById('base');
+const background = document.getElementById('background');
+const foreground = document.getElementById('foreground');
+const backgroundVideo = document.getElementById('background-video');
 
-  const backgroundSrc = `${BACKGROUND_FOLDER}/${backgroundIndex}`;
-  const foregroundSrc = `${FOREGROUND_FOLDER}/${foregroundIndex}.png`;
+function getCurrentUpdateIndex(date) {
+  const msSinceEpoch = date.getTime();
+  return Math.floor(msSinceEpoch / updateDuration) % updatesPerDay;
+}
 
-  checkFileExists(`${backgroundSrc}.mov`)
-    .then(() => {
-      backgroundVideo.src = `${backgroundSrc}.mov`;
-      backgroundVideo.style.display = 'block';
-      background.style.display = 'none';
-    })
-    .catch(() => {
-      background.src = `${backgroundSrc}.png`;
-      background.style.display = 'block';
-      backgroundVideo.style.display = 'none';
-    });
+function getIntervalDuration(currentDate) {
+  const nextUpdateIndex = getCurrentUpdateIndex(currentDate) + 1;
+  const nextUpdateTime = currentDate.getTime() + updateDuration;
+  const nextUpdateDate = new Date(nextUpdateTime);
+  return nextUpdateDate - currentDate;
+}
 
-  const useExtractionImage = Math.random() < 0.1;
+async function loadMedia(folder, index, imgElement, videoElement) {
+  const file = `${folder}/${index}`;
+  const pngExists = await checkFileExists(`${file}.png`);
+  const jpgExists = await checkFileExists(`${file}.jpg`);
+  const movExists = await checkFileExists(`${file}.mov`);
+  const mp4Exists = await checkFileExists(`${file}.mp4`);
 
-  if (useExtractionImage) {
-    const extractionIndex = Math.floor(Math.random() * 2) + 1;
-    const extractionSrc = `${EXTRACTIONS_FOLDER}/${extractionIndex}.png`;
-    foreground.src = extractionSrc;
-  } else {
-    foreground.src = foregroundSrc;
-    foregroundIndex = (foregroundIndex % 7) + 1;
+  if (pngExists || jpgExists) {
+    imgElement.src = pngExists ? `${file}.png` : `${file}.jpg`;
+    imgElement.style.display = 'block';
+    videoElement.style.display = 'none';
+  } else if (movExists || mp4Exists) {
+    videoElement.src = movExists ? `${file}.mov` : `${file}.mp4`;
+    videoElement.style.display = 'block';
+    imgElement.style.display = 'none';
+    videoElement.loop = true;
+    videoElement.play();
   }
 }
 
+async function loadImage(folder, index, imgElement) {
+  if (folder === BASE_FOLDER && index === 'Moonlight_Magic') {
+    const pngExists = await checkFileExists(`${folder}/Moonlight_Magic.png`);
+    if (pngExists) {
+      imgElement.src = `${folder}/Moonlight_Magic.png`;
+      return;
+    }
+  }
+
+  const file = `${folder}/${index}`;
+  const pngExists = await checkFileExists(`${file}.png`);
+  const jpgExists = await checkFileExists(`${file}.jpg`);
+
+  if (pngExists) {
+    imgElement.src = `${file}.png`;
+  } else if (jpgExists) {
+    imgElement.src = `${file}.jpg`;
+  }
+}
+
+
 function checkFileExists(url) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open('HEAD', url, true);
     xhr.onload = function () {
-      if (xhr.status === 200) {
-        resolve();
-      } else {
-        reject();
-      }
+      resolve(xhr.status >= 200 && xhr.status < 400);
+    };
+    xhr.onerror = function () {
+      resolve(false);
     };
     xhr.send();
   });
 }
+function getBackgroundIndex(currentDate, currentUpdateIndex) {
+  const dayOfMonth = currentDate.getDate();
+  return (dayOfMonth + currentUpdateIndex) % backgroundIndex + 1;
+}
 
+function getForegroundIndex(currentDate, currentUpdateIndex) {
+  const dayOfYear = Math.floor(currentDate.getTime() / (1000 * 60 * 60 * 24)) % 365;
+  return (dayOfYear + currentUpdateIndex) % foregroundIndex + 1;
+}
+
+function getBaseImageIndex(currentUpdateIndex) {
+  return currentUpdateIndex % baseIndex;
+}
+
+async function combineNFT() {
+  const currentDate = new Date();
+
+  const currentUpdateIndex = getCurrentUpdateIndex(currentDate);
+  const backgroundIndex = getBackgroundIndex(currentDate, currentUpdateIndex);
+  const foregroundIndex = getForegroundIndex(currentDate, currentUpdateIndex);
+
+  if (currentUpdateIndex === 0) {
+    const base = document.getElementById('base');
+    await loadImage('base', 'Moonlight_Magic', base);
+    base.style.display = 'block';
+    const background = document.getElementById('background');
+    background.src = '';
+    background.style.display = 'none';
+    const foreground = document.getElementById('foreground');
+    foreground.src = '';
+    foreground.style.display = 'none';
+  } else {
+    const base = document.getElementById('base');
+    base.src = '';
+    base.style.display = 'none';
+    const background = document.getElementById('background');
+    await loadImage('background', backgroundIndex, background);
+    background.style.display = 'block';
+    const foreground = document.getElementById('foreground');
+    await loadImage('foreground', foregroundIndex, foreground);
+    foreground.style.display = 'block';
+  }
+
+  // Schedule the next update
+  const intervalDuration = getIntervalDuration(currentDate);
+  setTimeout(combineNFT, intervalDuration);
+}
+
+combineNFT();
+
+// Add event listener for manual updates
 const manualUpdateBtn = document.getElementById('manual-update-btn');
 manualUpdateBtn.addEventListener('click', combineNFT);
-
-const AUTO_UPDATE_INTERVAL = 500000; // 5000 milliseconds = 5 seconds
-setInterval(combineNFT, AUTO_UPDATE_INTERVAL);
