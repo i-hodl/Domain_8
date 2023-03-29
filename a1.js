@@ -73,61 +73,45 @@ function getBaseImageIndex(currentUpdateIndex) {
   return currentUpdateIndex % baseIndex;
 }
 
-// for manual button during dev
+async function combineNFT() {
+  const currentDate = new Date();
 
-async function combineNFT(manual = false) {
-    const currentDate = new Date();
-  
-    const currentUpdateIndex = getCurrentUpdateIndex(currentDate);
-    const backgroundIndex = getBackgroundIndex(currentDate, currentUpdateIndex);
-    const foregroundIndex = getForegroundIndex(currentDate, currentUpdateIndex);
-  
-    if (currentUpdateIndex === 0) {
-      const base = document.getElementById('base');
-      await loadImage('base', 'Moonlight_Magic', base);
-      base.style.display = 'block';
-      const background = document.getElementById('background');
-      background.src = '';
-      background.style.display = 'none';
-      const foreground = document.getElementById('foreground');
-      foreground.src = '';
-      foreground.style.display = 'none';
-    } else {
-      const base = document.getElementById('base');
-      base.src = '';
-      base.style.display = 'none';
-      const background = document.getElementById('background');
-      await loadImage('background', backgroundIndex, background);
-      background.style.display = 'block';
-      const foreground = document.getElementById('foreground');
-      await loadImage('foreground', foregroundIndex, foreground);
-      foreground.style.display = 'block';
-    }
-  
-    // Schedule the next update only if not triggered manually
-    if (!manual) {
-      const intervalDuration = getIntervalDuration(currentDate);
-      setTimeout(combineNFT, intervalDuration);
-    }
+  const currentUpdateIndex = getCurrentUpdateIndex(currentDate);
+  const backgroundIndex = getBackgroundIndex(currentDate, currentUpdateIndex);
+  const foregroundIndex = getForegroundIndex(currentDate, currentUpdateIndex);
+
+  if (currentUpdateIndex === 0) {
+    const base = document.getElementById('base');
+    await loadImage('base', 'Moonlight_Magic', base);
+    base.style.display = 'block';
+    const background = document.getElementById('background');
+    background.src = '';
+    background.style.display = 'none';
+    const foreground = document.getElementById('foreground');
+    foreground.src = '';
+    foreground.style.display = 'none';
+  } else {
+    const base = document.getElementById('base');
+    base.src = '';
+    base.style.display = 'none';
+    const background = document.getElementById('background');
+    await loadImage('background', backgroundIndex, background);
+    background.style.display = 'block';
+    const foreground = document.getElementById('foreground');
+    await loadImage('foreground', foregroundIndex, foreground);
+    foreground.style.display = 'block';
   }
-  
-  window.onload = () => {
-    combineNFT();
-  
-    // Add event listener for manual updates
-    const manualUpdateBtn = document.getElementById('manual-update-btn');
-    manualUpdateBtn.addEventListener('click', () => combineNFT(true));
-  };
-  function timeTillNextChange() {
-    const currentDate = new Date();
-    const intervalDuration = getIntervalDuration(currentDate);
-    const timeRemaining = intervalDuration - (currentDate.getTime() % intervalDuration);
-    console.log(`Time till next change: ${timeRemaining} ms`);
-  }
-  
-  window.onload = () => {
-    combineNFT();
-  };
-  
-  // Expose the combineNFT function to the global scope
-  window.combineNFT = combineNFT;
+
+  // Schedule the next update
+  const intervalDuration = getIntervalDuration(currentDate);
+  setTimeout(combineNFT, intervalDuration);
+}
+
+window.onload = () => {
+  combineNFT();
+
+  // Add event listener for manual updates
+  const manualUpdateBtn = document.getElementById('manual-update-btn');
+  manualUpdateBtn.addEventListener('click', combineNFT);
+};
+
